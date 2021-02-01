@@ -1,6 +1,12 @@
 # reverse-proxy
 A very simple reverse proxy in go
 
+### Download Binary
+One can build the project from source using go build or can directly download the binary from the github release:
+```
+https://github.com/Abhishek-Srivastava/reverse-proxy/releases
+```
+
 ### Generate self-signed certficates
 ```
 openssl req  -new  -newkey rsa:2048  -nodes  -keyout revpro.key  -out revpro.csr
