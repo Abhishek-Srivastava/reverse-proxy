@@ -1,6 +1,14 @@
 # reverse-proxy
 A very simple reverse proxy in go
+## Running it on any kubernetes cluster
+The repo has a kubernetes manifests directory.
+```
+kubectl apply -f kubernetes/
+```
+This would deploy reverse-proxy in a loadbalancer configuration.
+The args can be updated in the deployment.yaml before applying.
 
+## To run it on the cli do the following
 ### Generate self-signed certficates
 ```
 openssl req  -new  -newkey rsa:2048  -nodes  -keyout revpro.key  -out revpro.csr

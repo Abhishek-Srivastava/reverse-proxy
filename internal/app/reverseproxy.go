@@ -19,10 +19,12 @@ type ReverseProxy struct {
 	HTTPTimeout int64  `json:"httpTimeout"`
 	CertFile    string `json:"certfile"`
 	KeyFile     string `json:"keyfile"`
+	Insecure    bool   `json:"insecure"`
 }
 
 // New returns a new initialization of the reverseproxy struct instance
-func New(ip, port, protocol, proxyport, certfile, keyfile string, httptimeout int64) *ReverseProxy {
+func New(ip, port, protocol, proxyport, certfile,
+	keyfile string, httptimeout int64, insecure bool) *ReverseProxy {
 	return &ReverseProxy{
 		IP:          ip,
 		Port:        port,
@@ -31,6 +33,7 @@ func New(ip, port, protocol, proxyport, certfile, keyfile string, httptimeout in
 		HTTPTimeout: httptimeout,
 		CertFile:    certfile,
 		KeyFile:     keyfile,
+		Insecure:    insecure,
 	}
 }
 
@@ -48,11 +51,17 @@ func (p *ReverseProxy) RunProxy() {
 	tr.TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
 	proxy.Transport = tr
 	http.HandleFunc("/", handler(proxy))
-	log.Printf("Serving reverse proxy on %v", p.Proxyport)
 	proxyURL := fmt.Sprintf("0.0.0.0:%v", p.Proxyport)
-	err = http.ListenAndServeTLS(proxyURL, p.CertFile, p.KeyFile, nil)
-	if err != nil {
-		log.Fatalf(fmt.Sprintf("Failed to start the tls proxy due to %v", err))
+	var serverErr error
+	if p.Insecure {
+		log.Printf("Serving Insecure reverse proxy on %v", p.Proxyport)
+		serverErr = http.ListenAndServe(proxyURL, nil)
+	} else {
+		log.Printf("Serving secured reverse proxy on %v", p.Proxyport)
+		serverErr = http.ListenAndServeTLS(proxyURL, p.CertFile, p.KeyFile, nil)
+	}
+	if serverErr != nil {
+		log.Fatalf(fmt.Sprintf("Failed to start the proxy due to %v", err))
 	}
 }
 

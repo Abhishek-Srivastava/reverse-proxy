@@ -29,12 +29,13 @@ var startCmd = &cobra.Command{
 	Short: "Starts the reverse proxy",
 	Long: `Starts the reverse proxy with the arguments. For example:
 
-reverse-proxy start --ipaddress 172.200.18.22 --port 443 --protocol https --proxyport 8080 --httptimeout 10 --certfile cert.crt --keyfile key.key
+reverse-proxy start --ipaddress 172.200.18.22 --port 443 --protocol https --proxyport 8080 --httptimeout 10 --certfile cert.crt --keyfile key.key --insecure false
 reverse-proxy start --ipaddress 172.200.18.22`,
 	Run: func(cmd *cobra.Command, args []string) {
 		var err error
 		var ip, serverport, proxyserverport, serverprotocol, cert, key string
 		var timeout int64
+		var insec bool
 		ip, err = cmd.Flags().GetString(ipaddress)
 		if err != nil {
 			log.Fatal(err)
@@ -59,15 +60,16 @@ reverse-proxy start --ipaddress 172.200.18.22`,
 		if err != nil {
 			log.Fatal(err)
 		}
-		serverprotocol, err = cmd.Flags().GetString(protocol)
-		if err != nil {
-			log.Fatal(err)
-		}
 		timeout, err = cmd.Flags().GetInt64(httptimeout)
 		if err != nil {
 			log.Fatal(err)
 		}
-		rvProxy := app.New(ip, serverport, serverprotocol, proxyserverport, cert, key, timeout)
+		insec, err = cmd.Flags().GetBool(insecure)
+		if err != nil {
+			log.Fatal(err)
+		}
+		rvProxy := app.New(ip, serverport, serverprotocol,
+			proxyserverport, cert, key, timeout, insec)
 		rvProxy.RunProxy()
 	},
 }
@@ -80,6 +82,7 @@ const (
 	certfile    = "certfile"
 	keyfile     = "keyfile"
 	httptimeout = "httptimeout"
+	insecure    = "insecure"
 )
 
 func init() {
@@ -95,12 +98,15 @@ func init() {
 	// is called directly, e.g.:
 	// startCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 	startCmd.Flags().String(ipaddress, "", "ip of the remote server")
-	startCmd.MarkFlagRequired(ipaddress)
+	if err := startCmd.MarkFlagRequired(ipaddress); err != nil {
+		log.Fatal(err)
+	}
 	startCmd.Flags().String(port, "443", "port of the remote server")
 	startCmd.Flags().String(protocol, "https", "protocol to connect http/https")
 	startCmd.Flags().String(proxyport, "8080", "proxyport on which the revereproxy would be served")
 	startCmd.Flags().String(certfile, "./certs/revpro.crt", "certificate file with path for tls")
 	startCmd.Flags().String(keyfile, "./certs/revpro.key", "certificate key file with path for tls")
 	startCmd.Flags().Int64(httptimeout, 10, "http timeout value in seconds")
+	startCmd.Flags().Bool(insecure, false, "set true to disables https")
 
 }
